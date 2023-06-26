@@ -1,0 +1,70 @@
+---
+title: "twentyOne"
+author: "Mehrnoosh Oghbaie"
+date: "2023-06-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Defining the plot function
+
+```{r }
+library(readr)
+library(ggplot2)
+library(dplyr)
+library(magrittr)
+plotRatio <- function(n){
+
+  res <- read_csv(paste0("res",n,".csv"))
+  
+  res1 <- res%>%
+    select(-round)%>%
+    distinct()%>%
+    group_by(player, n)%>%
+    summarize(max_cost = max(cost))
+  
+  res2 <- res%>%
+    select(-round)%>%
+    distinct()%>%
+    group_by(player, n) %>%
+    distinct(cost)%>% 
+    arrange(desc( cost)) %>% 
+    slice(2)
+  
+  
+  drm <- merge(res1,res2)%>%
+    filter(cost<21)%>% 
+    mutate(diff = max_cost-cost, cat = ifelse(max_cost==21,"win","lose"))%>%
+    group_by(cat, diff)%>%
+    count()
+  
+  p <- merge(drm%>%filter(cat == "win"),
+        drm%>%filter(cat == "lose"), by = "diff")%>%
+    mutate(percentage=100*n.x/n.y)%>%
+    ggplot(aes(x=diff, y = percentage))+
+    geom_bar(stat="identity")+
+    geom_smooth()+
+    theme_minimal()+
+    labs(title = paste("percentage of win/lose per last card value for", n,"players"), x= "win/lose last card")
+  
+  return(p)
+}
+```
+
+## Including Plots
+
+Plot win/lose ratio per last card for different number of players : 3,4,5,6
+
+```{r , echo=FALSE}
+
+plotRatio(3)
+plotRatio(4)
+plotRatio(5)
+plotRatio(6)
+
+```
+
+
